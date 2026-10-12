@@ -22,6 +22,7 @@ import type { PluginConfig } from '../../interfaces/highlite/plugin/PluginConfig
 import { PanelManager } from './panelManager';
 import { DatabaseManager } from './databaseManager';
 import { SettingsManager } from './settingsManager';
+import { PluginDataManager } from './pluginDataManager';
 
 // Highlite mirror endpoints
 const HIGHLITE_MANIFEST_URL = 'https://www.ryelite.org/api/plugins/manifest.json';
@@ -553,22 +554,40 @@ export class PluginManager {
         }
 
 
-        // Check if we are logged in
+        // Registered while logged in (a Plugin Hub install or update). Give it the same
+        // setup startHook gives every plugin at login, then start it only if it is enabled.
+        // Starting unconditionally ran plugins the user had not turned on, and without a
+        // data store the plugin wrote into a plain object, so everything it saved was lost
+        // at the next launch.
         if (this.isLoggedIn) {
-            if (pluginInstance.init) {
-                pluginInstance.init();
-            }
-
-            if (pluginInstance.postInit) {
-                pluginInstance.postInit();
-            }
-
-            if (pluginInstance.start) {
-                pluginInstance.start();
-            }
+            void this.activateDuringSession(pluginInstance);
         }
 
         return true;
+    }
+
+    private async activateDuringSession(plugin: Plugin): Promise<void> {
+        try {
+            const dataManager = new PluginDataManager();
+            if (dataManager.isInitialized) {
+                await dataManager.addPlugin(plugin);
+            }
+            await this.settingsManager.applySavedSettings(plugin);
+
+            if (plugin.init) {
+                plugin.init();
+            }
+
+            if (plugin.postInit) {
+                plugin.postInit();
+            }
+
+            if (plugin.settings.enable.value && plugin.start) {
+                plugin.start();
+            }
+        } catch (error) {
+            console.error(`[Ryelite] Error activating plugin ${plugin.pluginName}:`, error);
+        }
     }
 
     initAll(): void {

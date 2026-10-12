@@ -192,6 +192,27 @@ export class SettingsManager {
         return Promise.resolve();
     }
 
+    /**
+     * Load the current user's saved settings into a plugin registered after login
+     * (Plugin Hub install or update), so its enable flag and other values are right
+     * before anything decides whether to start it. Values are assigned directly, as
+     * registerPlugins does; callbacks are not fired.
+     */
+    async applySavedSettings(plugin: Plugin): Promise<void> {
+        if (!this.database || !this.username) return;
+        const allSettings = await this.database.get('settings', this.username);
+        const saved = allSettings?.[plugin.pluginName];
+        if (!saved) return;
+        for (const settingKey in saved) {
+            const setting = plugin.settings[settingKey];
+            if (!setting || saved[settingKey] === undefined) continue;
+            setting.value = saved[settingKey];
+            if (setting.onLoaded) {
+                setting.onLoaded.call(plugin);
+            }
+        }
+    }
+
     private async storePluginSettings(username: string, plugin: Plugin): Promise<void> {
         let pluginSettings = plugin.settings;
         let pluginName = plugin.pluginName;

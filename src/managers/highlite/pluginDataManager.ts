@@ -29,6 +29,10 @@ export class PluginDataManager {
     private writeTimeout: ReturnType<typeof setTimeout> | null = null;
     private initialized = false;
 
+    public get isInitialized(): boolean {
+        return this.initialized;
+    }
+
     constructor() {
         if (PluginDataManager.instance) {
             return PluginDataManager.instance;
