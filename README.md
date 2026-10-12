@@ -1,3 +1,5 @@
+> **Highspell+ mirror.** This is a full-history copy of the `@ryelite/core` source, kept so that [Highspell+](https://github.com/matter418/HighSpellPlus) can keep building and fixing its plugin framework no matter what happens to the original repository. Highspell+ ships the built package in its own `vendor/` folder; this repository is where any future change to it would be made. Original project: ash-of-the-meadow/rl-core (GPL-3.0).
+
 # @ryelite/core 
 
 This project/package provides two things in one. A plugin-type api to use during development as well as the core runtime used by RyeLite compatible clients.
